@@ -24,31 +24,55 @@ int main() {
 
     int max_argument = 10;
     int max_length = 19;
-    char commandLine[max_argument*(max_length+1)];
+    int max_size = max_argument*(max_length+1);
+    char commandLine[max_size];
 
   while (1){
 
     printf("%s","GENIE > " );
-    scanf("%s", commandLine);
+    fgets(commandLine, max_size, stdin);
     int num;
     char ** commandFull = readTokens(max_argument+1, max_length, &num, commandLine);
 
-    char* command = commandFull[0];
-    char quit[] = "quit";
+    if (num > 0){
 
-    if (num==1 && strcmp(command, quit)==0){
-      printf("%s\n", "Goodbye!");
-      exit(0);
-    }else{
 
-      if (fork() == 0){
-        system(commandLine);
-        exit(0);
-      }else {
-        wait(NULL);
-      }
+          char* command = commandFull[0];
+          //char *** arguments = &commandFull[1];
+          char quit[] = "quit";
+
+          if (num==1 && strcmp(command, quit)==0){
+            printf("%s\n", "Goodbye!");
+            exit(0);
+          }else{
+
+            struct stat cStat;
+            char path[strlen("/bin/")+max_length];
+            if (stat(command, &cStat)<0){
+              if (command[0] != '/'){
+                strcpy(path, "/bin/");
+                strcat(path, command);
+              }
+            }else{
+              strcpy(path, command);
+            }
+
+            if (stat(path, &cStat) < 0){
+              printf("%s not found\n", path);
+            }else{
+              if (fork() == 0){
+                char** args = &commandFull[0];
+                execv(path, args);
+                exit(0);
+              }else{
+                wait(NULL);
+              }
+            }
+
+          }
 
     }
+
   }
 
 
