@@ -40,7 +40,6 @@ int main(int argc, char **argv) {
     fd = open( fileName, O_RDONLY );
 
     sprintf(who, "Parent [%d]", getpid());
-    //char doneMsg[128*nChild];
     int ppid = getpid();
     readOneFile(who, fd );
 
@@ -56,12 +55,10 @@ int main(int argc, char **argv) {
       if (getpid() != ppid){
         char strBuf[128];
         sprintf(strBuf, "Parent: %s done.\n", who );
+        write(STDOUT_FILENO, strBuf, strlen(strBuf));
         exit(0);
       }
     }
-
-
-
 
     for (int i=0; i<nChild; i++)
       wait(NULL);
@@ -85,7 +82,7 @@ int main(int argc, char **argv) {
       if (getpid() != ppid){
         char strBuf[128];
         sprintf(strBuf, "Parent: %s done.\n", who);
-        fwrite(&strBuf, sizeof(strBuf),1, stdout);
+        fwrite(&strBuf, strlen(strBuf),1, stdout);
         exit(0);
       }
     }
@@ -149,7 +146,6 @@ void readFromBuffer(char who[50], FILE* fp){
   char strBuf[128];
 
 	while (readBytes > 0) {
-		//usleep (rand()%2000);
     usleep(1000);
 		charBuf = 0;
 		readBytes = fread(&charBuf, 1 , 1, fp);

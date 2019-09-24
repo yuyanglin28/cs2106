@@ -1,8 +1,8 @@
 /*************************************
-* Lab 2 Exercise 2
-* Name: Lin Yuyang
-* Student No: A0207526H
-* Lab Group: 09
+ * Lab 2 Exercise 3
+ * Name:
+ * Student No:
+ * Lab Group:
  *************************************
  Warning: Make sure your code works on
  lab machine (Linux on x86)
@@ -20,9 +20,13 @@
 
 #define MAX_ARGS 10
 #define MAX_WORD_LEN 19
+#define MAX_CMDS 10
 
 char** readTokens(int maxTokenNum, int maxTokenSize, int* readTokenNum, char* buffer);
 void freeTokenArray(char** strArr, int size);
+char** splitCommandChain(int maxArgs, int maxOneCmdSize, int* chainNum, char* input);
+void exeOneCmd (int in, int out, char** cmd);
+void pipeExe(int chainNum, char** cmdChain);
 int checkPath(char * cmd);
 void isQuit(char** cmd, int num);
 
@@ -31,16 +35,21 @@ int main ()
 {
 
   int oneCmdSize = MAX_WORD_LEN*(MAX_ARGS+1);
-
-  char input[oneCmdSize];
+  int cmdChainSize = (oneCmdSize+2)*MAX_CMDS;
+  char input[cmdChainSize];
 
   while (1){
     printf("%s","GENIE > " );
-    fgets(input, oneCmdSize, stdin);
+    fgets(input, cmdChainSize, stdin);
 
+    int chainNum;
+    char ** cmdChain = (char**) malloc(sizeof(char*) * MAX_CMDS);
+    cmdChain = splitCommandChain(MAX_CMDS, oneCmdSize, &chainNum, input);
+
+    if (chainNum == 1){
 
       int num;
-      char** cmdFull = readTokens(MAX_ARGS+1, MAX_WORD_LEN, &num, input);
+      char** cmdFull = readTokens(MAX_ARGS+1, MAX_WORD_LEN, &num, cmdChain[0]);
 
       isQuit(cmdFull, num);
 
@@ -49,16 +58,20 @@ int main ()
         continue;
       }else {
         if (fork() == 0){
-          execvp(cmdFull[0], &cmdFull[0]);
+          execv(cmdFull[0], &cmdFull[0]);
           exit(0);
         }else{
           wait(NULL);
         }
       }
-      freeTokenArray(cmdFull, num);
-  }
-}
+    }else if (chainNum > 1){
+      pipeExe(chainNum, cmdChain);
+    }
 
+    freeTokenArray(cmdChain, chainNum);
+  }
+
+}
 
 char** readTokens(int maxTokenNum, int maxTokenSize, int* readTokenNum, char* buffer)
 //Tokenize buffer
@@ -120,6 +133,53 @@ void freeTokenArray(char** tokenStrArr, int size) {
     //      afterwards
 }
 
+char** splitCommandChain(int maxArgs, int maxOneCmdSize, int* chainNum, char* input){
+
+  char** result;
+  char* token;
+  int i;
+  result = (char**) malloc(sizeof(char*) * MAX_CMDS);
+
+  for (int i = 0; i < MAX_CMDS; i++) {
+      result[i] = NULL;
+  }
+  token = strtok(input, "|");
+
+  i = 0;
+  while (i < MAX_CMDS && (token != NULL)) {
+      result[i] = (char*) malloc(sizeof(char*) * maxOneCmdSize);
+      strncpy(result[i], token,  maxOneCmdSize-1);
+      result[i][maxOneCmdSize-1] = '\0';
+
+      i++;
+      token = strtok(NULL, "|");
+  }
+  *chainNum = i;
+
+  return result;
+}
+
+void exeOneCmd (int in, int out, char** cmd)
+{
+  if (fork() == 0){
+
+      if (in != 0){
+          dup2 (in, 0);
+          close (in);
+      }
+
+      if (out != 1){
+          dup2 (out, 1);
+          close (out);
+      }
+
+      execvp (cmd[0], &cmd[0]);
+  }else {
+    wait(NULL);
+  }
+
+}
+
 
 void isQuit(char** cmd, int num){
 
@@ -130,6 +190,50 @@ void isQuit(char** cmd, int num){
     exit(0);
   }
 
+}
+
+void pipeExe(int chainNum, char** cmdChain){
+  int i;
+  int in, fd [2];
+  int num;
+
+  in = 0;
+
+  for (i = 0; i < chainNum - 1; ++i)
+    {
+
+      char ** oneCmd = readTokens(MAX_ARGS+1, MAX_WORD_LEN, &num, cmdChain[i]);
+      if (checkPath(oneCmd[0]) == 0){
+        printf("%s not found\n", oneCmd[0]);
+        return;
+      }
+
+      pipe (fd);
+
+      exeOneCmd(in, fd [1], oneCmd);
+
+      close (fd [1]);
+
+      in = fd [0];
+
+      freeTokenArray(oneCmd, num);
+
+    }
+
+
+  char ** lastCmd = readTokens(MAX_ARGS+1, MAX_WORD_LEN, &num, cmdChain[i]);
+
+   if (fork() == 0){
+     close(0);
+     close(fd[1]);
+     dup2 (in, 0);
+      execvp(lastCmd[0], &lastCmd[0]);
+    }
+    else{
+      close(fd[0]);
+      close(fd[1]);
+      wait(NULL);
+    }
 }
 
 
