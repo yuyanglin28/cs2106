@@ -94,11 +94,6 @@ int main(int argc, char** argv)
 
     cleanup(num_of_cars, num_of_segments);
 
-
-    
-
-
-
     sem_destroy(&concurrently_moving_cars_mutex);
     sem_destroy(&concurrent_cars_mutex);
     for (i = 0; i < num_of_segments; i++) {
