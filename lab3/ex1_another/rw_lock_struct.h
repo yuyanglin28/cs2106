@@ -9,7 +9,7 @@
 
  typedef struct {
    pthread_mutex_t mutex;
-   pthread_mutex_t empty;
    int reader_count;
    int writer_count;
+   pthread_cond_t cond;
  } rw_lock;
