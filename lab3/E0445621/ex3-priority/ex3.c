@@ -29,14 +29,21 @@ typedef struct
 
 sem_t car_limit;
 seg_state_stuct *seg_state;
+int *car_candidate;
 
 void initialise()
 {
   sem_init(&car_limit, 0, num_of_segments-1);
+
   seg_state = malloc (sizeof (seg_state_stuct) * num_of_segments);
   ensure_successful_malloc(seg_state);
   for (int i=0; i<num_of_segments; i++)
     sem_init(&seg_state[i].state, 0, 1);
+
+  car_candidate = malloc(sizeof(int) * num_of_segments);
+  ensure_successful_malloc(car_candidate);
+  for (int i=0; i<num_of_segments; i++)
+    car_candidate[i] = 0;
 }
 
 void cleanup()
@@ -56,15 +63,20 @@ void* car(void* car)
     sem_wait(&car_limit);
     sem_wait(&seg_state[one_car->entry_seg].state);
     enter_roundabout(one_car);
+    while(car_candidate[one_car->entry_seg] != 0); //busy wait here
 
     while(one_car->current_seg != one_car->exit_seg){
-
       sem_wait(&seg_state[NEXT(one_car->current_seg, num_of_segments)].state);
       move_to_next_segment(one_car);
+      if (car_candidate[PREV(one_car->current_seg, num_of_segments)] != 0)
+         car_candidate[PREV(one_car->current_seg, num_of_segments)] -- ;
+      car_candidate[one_car->current_seg] ++ ;
       sem_post(&seg_state[PREV(one_car->current_seg, num_of_segments)].state);
 
     }
+    car_candidate[one_car->current_seg] --;
     exit_roundabout(one_car);
+
     sem_post(&seg_state[one_car->exit_seg].state);
 
     sem_post(&car_limit);
