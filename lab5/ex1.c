@@ -63,7 +63,11 @@ MY_FILE *my_fopen(const char *pathname, const char *mode) {
 
 	f->fd = fd;
 	// TODO: Initialize the other members of your structure
-
+	f->offset = 0;
+	f->first_read = 1;
+	for (int i = 0; i < 4096; i++) {
+		f->buffer[i] = '\0';
+	}
 	return f;
 }
 
@@ -78,6 +82,7 @@ int my_fclose(MY_FILE *f) {
 	int fd = f->fd;
 
 	ret1 = my_fflush(f);
+
 	free_file(f);
 
 	ret2 = close(fd);

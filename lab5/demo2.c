@@ -36,12 +36,12 @@ int main(int argc, char **argv) {
     fileName = argv[1];
     nChild = atoi(argv[2]);
 
-    file = my_fopen( fileName, "r" );
+    file = fopen( fileName, "r" );
 
     sprintf(who, "Parent [%d]", getpid());
 
     charBuf = 0;
-    readBytes = my_fread( (void*) &charBuf, 1, 1, file);
+    readBytes = fread( (void*) &charBuf, 1, 1, file);
 
 	if( readBytes != 1 ) {
 		return 1;
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     }
 
     freadFromFile(who, file);
-    my_fclose (file);
+    fclose (file);
 
 
 }
@@ -71,7 +71,7 @@ void freadFromFile (char who[50], MY_FILE *file) {
 	while (readBytes > 0) {
 		usleep (1000);
 		charBuf = 0;
-		readBytes = my_fread( (void*) &charBuf, 1, 1, file);
+		readBytes = fread( (void*) &charBuf, 1, 1, file);
 
 		if( readBytes != 1 ) {
 			return;

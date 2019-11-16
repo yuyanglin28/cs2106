@@ -6,7 +6,7 @@ my_fwrite test.txt 5
 my_fseek test.txt 3 0
 my_fread test.txt 1
 my_fseek test.txt 0 2
-my_fwrite test.txt 2813
+my_fwrite test.txt 4096
 my_fflush test.txt
 my_fclose test.txt
 my_fopen test.txt a

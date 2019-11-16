@@ -10,21 +10,34 @@
 
 #include "my_stdio.h"
 
-size_t my_fwrite(const void *p tr, size_t size, size_t nmemb, MY_FILE *stream) {
-	size_t to_write = size * nmemb;
-	size_t bytes_written;
-	if (to_write < 4096) {
-		bytes_written = write(stream->fd, ptr, to_write);
-	} else {
-		bytes_written = write(stream->fd, ptr, to_write);
+void  clean_buffer(MY_FILE *stream) {
+  stream->offset = 0;
+	for (int i = 0; i < 4096; i++) {
+		stream->buffer[i] = '\0';
 	}
-	//printf("to_write%d\n", to_write);
-	//printf("write%d\n", bytes_written);
-	if (bytes_written == -1) {
-		return -1;
-	} else if (bytes_written == 0){
-		return 0;
-	} else {
-		return bytes_written / size;
+}
+
+size_t my_fwrite(const void *ptr, size_t size, size_t nmemb, MY_FILE *stream) {
+	/*clean_buffer(stream);
+	const char* ptrChar;
+	ptrChar = ptr;
+	int count = 0;
+	for (int i = 0; i < nmemb; i++) {
+		for (int j = 0; j < size; j++) {
+		  stream->buffer[stream->offset] = ptrChar[j + i * size];
+			stream->offset ++;
+			if (stream->offset >= 4096) {
+				size_t write_size = write(stream->fd, stream->buffer, 4096);
+				if (write_size == -1) {
+					return -1;
+				}
+				clean_buffer(stream);
+			}
+		}
+		count++;
 	}
+	return count;*/
+
+	size_t write_size = write(stream->fd, ptr, size*nmemb);
+	return write_size / size;
 }

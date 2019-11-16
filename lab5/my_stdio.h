@@ -26,7 +26,10 @@
 typedef struct {
 	int fd;
 	// TODO: Define the members of your structure
-} MY_FILE; 
+	int offset;
+	char buffer[4096];
+	int first_read;
+} MY_FILE;
 
 MY_FILE *my_fopen(const char *pathname, const char *mode);
 int my_fclose(MY_FILE *stream);

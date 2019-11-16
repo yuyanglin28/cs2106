@@ -9,15 +9,40 @@
  *************************************/
 #include "my_stdio.h"
 
-size_t my_fread(void *ptr, size_t size, size_t nmemb, MY_FILE *stream) {
-	size_t to_read = size * nmemb;
-  size_t bytes_read = read(stream->fd, ptr, to_read);
-	if (bytes_read == -1) {
+int load_buffer(MY_FILE *stream) {
+	size_t read_size = read(stream->fd, stream->buffer, 4096);
+	if (read_size == -1) {
 		return -1;
-	} else if (bytes_read == 0){
-		return 0;
-	} else {
-		return bytes_read / size;
 	}
+	for (int i = read_size; i < 4096; i++) {
+		stream->buffer[i] = '\0';
+	}
+  stream->offset = 0;
+	return 1;
+}
 
+size_t my_fread(void *ptr, size_t size, size_t nmemb, MY_FILE *stream) {
+	char* ptrChar;
+	ptrChar = ptr;
+	if (stream->first_read) {
+	  if (load_buffer(stream) == -1)
+		  return -1;
+		stream->first_read = 0;
+	}
+	int count = 0;
+	for (int i = 0; i < nmemb; i++) {
+		for (int j = 0; j < size; j++) {
+			ptrChar[j + i * size] = stream->buffer[stream->offset];
+			stream->offset ++;
+			if (stream->offset >= 4096) {
+				if (load_buffer(stream) == -1)
+				  return -1;
+			}
+			if (stream->buffer[stream->offset] == '\0'){
+				return count;
+			}
+		}
+		count++;
+	}
+	return count;
 }

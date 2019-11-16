@@ -11,12 +11,14 @@
 #include "my_stdio.h"
 
 int my_fflush(MY_FILE *stream) {
-	char ptr = 0;
-	long size = lseek(stream->fd, 0, SEEK_END);
-	printf("%ld\n", size);
-	int buffer_size = 4096;
-	size_t items_written = my_fwrite(&ptr, size, 1, stream);
-	if (items_written != -1) {
+
+	size_t write_size = write(stream->fd, stream->buffer, stream->offset);
+	for (int i = 0; i < 4096; i++) {
+		stream->buffer[i] = '\0';
+	}
+	stream->offset = 0;
+	stream->first_read = 1;
+	if (write_size != -1) {
 		return 0;
 	} else {
 		return MY_EOF;
@@ -24,16 +26,16 @@ int my_fflush(MY_FILE *stream) {
 }
 
 int my_fseek(MY_FILE *stream, long offset, int whence) {
+	if (my_fflush(stream) != 0) {
+		return -1;
+	}
 	if (whence == SEEK_SET) {
-		lseek(stream->fd, offset, whence);
 	  return offset;
 	} else if (whence == SEEK_END) {
 		long pre = lseek(stream->fd, 0, SEEK_END);
-		lseek(stream->fd, offset, SEEK_END);
 		return pre + offset;
 	} else if (whence == SEEK_CUR){
 		long pre = lseek(stream->fd, 0, SEEK_CUR);
-		lseek(stream->fd, offset, SEEK_CUR);
 		return pre + offset;
 	} else {
 		return -1;
